@@ -1,4 +1,4 @@
-# Slack DM Converter
+# Slack DM Converter (Created with GPT)
 
 **Slack DM Converter** is a cross-platform Python application that allows you to convert Slack direct message (DM) exports from a `.zip` file into a single, readable HTML report. It automatically resolves user IDs to display names, sorts messages chronologically, and can be run with a simple drag-and-drop GUI.
 
