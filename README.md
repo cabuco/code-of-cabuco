@@ -1,4 +1,6 @@
-# 👋 Hey, I’m Cabuco...and I approved this AI generated message
+# 👋 Hey, I’m Cabuco
+
+<sub>*This README was AI-assisted. Human-approved. Slightly overthought.*</sub>
 
 Senior IT Support Specialist by title.  
 In practice, I’m very much a **Guy in the Chair**.
@@ -62,6 +64,7 @@ Operating in environments that are “mostly fine” until they need someone beh
 ## 🧾 Operating Principle
 > The best heroes aren’t always visible.  
 > Sometimes they’re the reason the mission works at all.
+> Never say, "I don't know." Always say, "I'll find out."
 
 If you value preparation, clear comms, and systems that don’t panic — we’ll get along.
 
