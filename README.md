@@ -69,5 +69,3 @@ Operating in environments that are “mostly fine” until they need someone beh
 If you value preparation, clear comms, and systems that don’t panic — we’ll get along.
 
 ---
-
-*README intentionally low-ego, low-buzzword, high signal.*
