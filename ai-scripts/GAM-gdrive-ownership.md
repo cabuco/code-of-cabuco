@@ -22,4 +22,17 @@ Full Fidelity Recursive copy of source's MyDrive
 
 gam user source@domain.com copy drivefile "root" recursive parentid "TRANSFER_ID"
 
+Add the destination/newOwner as editor to all files within the transfer folder:
+
+gam user source@domain.com add drivefileacl "TRANSFER_ID" user target@domain.com role writer
+
+Create the sheet that contains GDrive file ID info for all flies in the Transfer Folder named: "source-mydrive"
+
+gam user source@domain.com print filetree select TRANSFER_ID fields id,mimetype,parents todrive
+
+You should have headers in this order A-G: User, index, name, id, mimeType, parents in the sheet. In H2, paste the following formula:
+
+= "gam user source@domain.com add drivefileacl """ & E2 & """ user target@domain.com role owner"
+
+
 
