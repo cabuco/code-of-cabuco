@@ -33,7 +33,7 @@ target@domain.com
 
 ---
 
-# 2. Create the Transfer Folder
+# 2. Create the Transfer Folder & Transfer Ownership
 
 Create a folder in the source user’s MyDrive:
 
@@ -42,6 +42,12 @@ gam user source@domain.com create drivefile drivefilename "source-mydrive" mimet
 ```
 
 Record the returned folder ID — this is your **TRANSFER_ID**.
+
+```bash
+gam user source@domain.com add drivefileacl "TRANSFER_ID" user target@domain.com role owner
+```
+
+Transfers ownership of the folder you created to the new target.
 
 ---
 
@@ -55,17 +61,7 @@ gam user source@domain.com copy drivefile "root" recursive parentid "TRANSFER_ID
 
 ---
 
-# 4. Grant the Destination User Writer Access
-
-Writer access is required before transferring ownership:
-
-```bash
-gam user source@domain.com add drivefileacl "TRANSFER_ID" user target@domain.com role writer
-```
-
----
-
-# 5. Generate a Spreadsheet of All Items in the Transfer Folder
+# 4. Generate a Spreadsheet of All Items in the Transfer Folder
 
 This spreadsheet allows bulk ownership transfer.
 
@@ -95,21 +91,13 @@ Run all generated commands to transfer ownership of every file and folder inside
 
 ---
 
-# 6. Make the Transfer Folder Appear in the Destination’s MyDrive
+# 5. Make the Transfer Folder Appear in the Destination’s MyDrive
 
 After ownership transfer, the folder might not be visible. Fix this with the steps below.
 
 ---
 
-## 6a. Transfer Ownership of the Top-Level Folder
-
-```bash
-gam user source@domain.com add drivefileacl "TRANSFER_ID" user target@domain.com role owner
-```
-
----
-
-## 6b. Move the Folder Into the Destination’s MyDrive
+## 6. Move the Folder Into the Destination’s MyDrive
 
 ```bash
 gam user target@domain.com update drivefile "TRANSFER_ID" addparent root
