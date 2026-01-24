@@ -101,15 +101,7 @@ After ownership transfer, the folder might not be visible. Fix this with the ste
 
 ---
 
-## 6a. Identify the Current Parent
-
-```bash
-gam user target@domain.com info drivefile "TRANSFER_ID"
-```
-
----
-
-## 6b. Transfer Ownership of the Top-Level Folder
+## 6a. Transfer Ownership of the Top-Level Folder
 
 ```bash
 gam user source@domain.com add drivefileacl "TRANSFER_ID" user target@domain.com role owner
@@ -117,7 +109,7 @@ gam user source@domain.com add drivefileacl "TRANSFER_ID" user target@domain.com
 
 ---
 
-## 6c. Move the Folder Into the Destination’s MyDrive
+## 6b. Move the Folder Into the Destination’s MyDrive
 
 ```bash
 gam user target@domain.com update drivefile "TRANSFER_ID" addparent root
