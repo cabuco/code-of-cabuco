@@ -69,7 +69,7 @@ The output file includes:
 ```
 Query,Account,Count
 "query1",source@domain.com,123
-"query2",ashtom@domain.com,52
+"query2",source@domain.com,52
 ```
 
 ---
