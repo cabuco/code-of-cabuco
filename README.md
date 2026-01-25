@@ -1,3 +1,7 @@
+<img width="1584" height="396" alt="linkedin-1584x396" src="https://github.com/user-attachments/assets/397f9611-3817-4a77-ac1d-9582baa7e33a" />
+
+
+
 # 👋 Hey, I’m Cabuco
 
 <sub>*This README was AI-assisted. Human-approved. Slightly overthought.*</sub>
