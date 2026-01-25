@@ -18,18 +18,20 @@ Create a **full recursive copy** of the user’s MyDrive, place it into a dedica
 - A single folder containing everything
 - Zero impact on the original MyDrive that IT will archive
 
-To assist the the GAM Command creations for accurate syntax, feel free to make a copy of this [Formula Sheet](https://docs.google.com/spreadsheets/d/1GIsNVNZtXEuc7QI_HjD88dzq33s4YZOZwgyQdHaMxpQ/edit?usp=sharing)
+To assist with accurate GAM command creation, you may copy and use this helpful **Formula Sheet**:
+
+➡️ https://docs.google.com/spreadsheets/d/1GIsNVNZtXEuc7QI_HjD88dzq33s4YZOZwgyQdHaMxpQ/edit?usp=sharing
 
 ---
 
 # 1. Identify Accounts
 
-- **Source account:** offboarded user  
-- **Destination account:** manager
+- **Source account:** Offboarded user
+- **Destination account:** Manager
 
 Example:
 ```
-source@domain.com  
+source@domain.com
 target@domain.com
 ```
 
@@ -45,17 +47,17 @@ gam user source@domain.com create drivefile drivefilename "source-mydrive" mimet
 
 Record the returned folder ID — this is your **TRANSFER_ID**.
 
+Transfer folder ownership to the destination account:
+
 ```bash
 gam user source@domain.com add drivefileacl "TRANSFER_ID" user target@domain.com role owner
 ```
-
-Transfers ownership of the folder you created to the new target.
 
 ---
 
 # 3. Recursively Copy the Source MyDrive
 
-Copy everything from the user’s root into the transfer folder:
+Copy everything from the source user’s root into the transfer folder:
 
 ```bash
 gam user source@domain.com copy drivefile "root" recursive parentid "TRANSFER_ID"
@@ -65,7 +67,7 @@ gam user source@domain.com copy drivefile "root" recursive parentid "TRANSFER_ID
 
 # 4. Generate a Spreadsheet of All Items in the Transfer Folder
 
-This spreadsheet allows bulk ownership transfer.
+This spreadsheet is necessary for bulk ownership transfer.
 
 ```bash
 gam user source@domain.com print filetree select TRANSFER_ID fields id,mimetype,parents todrive
@@ -73,12 +75,12 @@ gam user source@domain.com print filetree select TRANSFER_ID fields id,mimetype,
 
 ### Expected Columns (A–G)
 
-- User  
-- index  
-- name  
-- id  
-- mimeType  
-- parents  
+- User
+- index
+- name
+- id
+- mimeType
+- parents
 - (system columns may vary)
 
 ### Ownership Transfer Formula
@@ -86,20 +88,18 @@ gam user source@domain.com print filetree select TRANSFER_ID fields id,mimetype,
 Paste the following into **H2** of the generated Google Sheet, then fill down:
 
 ```text
-= "gam user source@domain.com add drivefileacl """ & E2 & """ user target@domain.com role owner"
+= "gam user source@domain.com add drivefileacl "" & E2 & "" user target@domain.com role owner"
 ```
 
-Run all generated commands to transfer ownership of every file and folder inside the transfer folder.
+Run all generated commands to fully transfer ownership of every file and folder inside the transfer folder.
 
 ---
 
 # 5. Make the Transfer Folder Appear in the Destination’s MyDrive
 
-After ownership transfer, the folder might not be visible. Fix this with the steps below.
+After ownership transfer, the folder may not appear immediately in the destination user’s MyDrive.
 
----
-
-## 6. Move the Folder Into the Destination’s MyDrive
+Run the following command to attach it to MyDrive:
 
 ```bash
 gam user target@domain.com update drivefile "TRANSFER_ID" addparent root
@@ -111,8 +111,8 @@ gam user target@domain.com update drivefile "TRANSFER_ID" addparent root
 
 This workflow ensures:
 
-- A complete, organized replica of the offboarded user’s MyDrive  
-- Manager receives a clean, single-location copy  
-- IT retains the original MyDrive untouched for archival  
-- No reliance on view-only access or confusing searches  
-- A predictable, scalable offboarding process for GDrive environments
+- A complete, fully organized replica of the offboarded user's MyDrive
+- A single easy-to-access folder for the manager
+- Preservation of the original MyDrive for IT archival
+- No dependency on view-only access or error-prone Drive searches
+- A scalable, reliable offboarding workflow for Google Workspace environments
