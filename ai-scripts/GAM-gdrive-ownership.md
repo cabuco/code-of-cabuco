@@ -18,6 +18,8 @@ Create a **full recursive copy** of the user’s MyDrive, place it into a dedica
 - A single folder containing everything
 - Zero impact on the original MyDrive that IT will archive
 
+To assist the the GAM Command creations for accurate syntax, feel free to make a copy of this [Formula Sheet](https://docs.google.com/spreadsheets/d/1GIsNVNZtXEuc7QI_HjD88dzq33s4YZOZwgyQdHaMxpQ/edit?usp=sharing)
+
 ---
 
 # 1. Identify Accounts
