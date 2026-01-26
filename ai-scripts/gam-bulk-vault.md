@@ -88,6 +88,14 @@ gam csv vault_tasks.csv gam create export matter "@source lit hold" name "~~Expo
 
 ---
 
+To see the live status and verify they are running
+
+```bash
+gam show vaultexports matter "@sourcehandle lit hold"
+```
+
+
+
 # Summary
 This automated workflow:
 - Eliminates repetitive manual Google Vault UI work
