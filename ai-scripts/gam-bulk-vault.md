@@ -10,6 +10,10 @@ This guide provides:
 - Automated counting and export generation
 - A clean structure suited for GitHub documentation
 
+Some Prereqs
+- Install Google Cloud CLI w/ Google Cloud SDK & GAM
+- Vault Scopes: Google Vault API & 
+
 ---
 
 # 1. Prepare Your CSV File
@@ -94,6 +98,28 @@ To see the live status and verify they are running
 gam show vaultexports matter "@sourcehandle lit hold"
 ```
 
+---
+
+The next step is the download from vault into organized folders to your local host
+
+```bash
+mkdir -p ~/Desktop/Legal_Exports
+cd ~/Desktop/Legal_Exports
+while IFS=, read -r ExportName Query; do
+  [[ "$ExportName" == "ExportName" ]] && continue
+  echo "------------------------------------------------"
+  echo "Downloading: $ExportName"
+  mkdir -p "$ExportName"
+  
+  # New Syntax: Just matter name and export name directly
+  gam download vaultexport "@sourcehandle lit hold" "$ExportName" targetfolder "./$ExportName"
+  
+  if [ -z "$(ls -A "./$ExportName")" ]; then
+     echo "NOTICE: $ExportName was empty."
+     echo "Search term returned 0 results in Vault." > "./$ExportName/NO_RESULTS_FOUND.txt"
+  fi
+done < ~/Downloads/vault_tasks.csv
+```
 
 
 # Summary
