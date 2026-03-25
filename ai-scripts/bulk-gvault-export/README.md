@@ -110,10 +110,10 @@ You can safely re‑run the script at any time. Completed exports are skipped au
 
 ## Safe Stop Mechanism
 
-To stop the script gracefully, create the following file:
+To stop the script gracefully, run the following command in the same directory as your script:
 
 ```
-vault_exports/STOP_VAULT_AUTOMATION
+touch vault_exports/STOP_VAULT_AUTOMATION
 ```
 
 The script checks for this file between major steps and exits cleanly without corrupting state.
