@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outlook Deep Link Generator</title>
+    <style>
+        body { 
+            font-family: "Segoe UI", Tahoma, sans-serif; 
+            padding: 40px 20px; 
+            background-color: #faf9f8; 
+            display: flex;
+            justify-content: center;
+        }
+        .card { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 4px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+            max-width: 600px;
+            width: 100%;
+        }
+        h2 { color: #0078d4; margin-top: 0; }
+        .instructions { background: #f3f2f1; padding: 15px; border-left: 4px solid #0078d4; margin-bottom: 20px; font-size: 0.9em; }
+        .mac-note { color: #d13438; font-weight: bold; margin-top: 10px; display: block; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #323130; }
+        input { 
+            width: 100%; 
+            padding: 12px; 
+            margin-bottom: 20px; 
+            border: 1px solid #8a8886; 
+            border-radius: 2px; 
+            box-sizing: border-box;
+        }
+        button { 
+            width: 100%; 
+            background: #0078d4; 
+            color: white; 
+            border: none; 
+            padding: 14px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 16px;
+        }
+        button:hover { background: #106ebe; }
+        #result { 
+            margin-top: 25px; 
+            padding: 20px; 
+            background: #f0f7ff; 
+            border: 1px solid #0078d4; 
+            display: none; 
+        }
+        #finalUrl { 
+            word-break: break-all; 
+            font-family: monospace; 
+            background: white; 
+            padding: 10px; 
+            border: 1px solid #ced4da; 
+            margin: 10px 0; 
+        }
+        .copy-btn { background: #107c10; margin-top: 10px; }
+        .copy-btn:hover { background: #0b590b; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Outlook Deep Link Generator</h2>
+    <div class="instructions">
+        <strong>Instructions:</strong><br>
+        1. Open email in Shared Mailbox.<br>
+        2. Click <strong>...</strong> > <strong>View</strong> > <strong>Open in new window</strong>.<br>
+        3. <strong>Refresh the new window:</strong> 
+           <br>&nbsp;&nbsp;&nbsp;• Windows: Press <strong>F5</strong>
+           <br>&nbsp;&nbsp;&nbsp;• Mac: Press <strong>Fn + F5</strong>
+           <span class="mac-note">⚠️ Mac users MUST hold 'Fn' for the refresh to work!</span>
+        <br>4. Copy the URL from that window and paste it below.
+    </div>
+
+    <label>Shared Mailbox Address:</label>
+    <input type="text" id="email" value="legal-support@github.com" placeholder="e.g. legal-support@github.com">
+
+    <label>Paste "F5" URL from Address Bar:</label>
+    <input type="text" id="rawUrl" placeholder="https://outlook.cloud.microsoft/mail/0/deeplink/...">
+
+    <button onclick="generate()">Generate Permanent Link</button>
+
+    <div id="result">
+        <strong>Sharable Deep Link:</strong>
+        <div id="finalUrl"></div>
+        <button class="copy-btn" onclick="copyText()">Copy to Clipboard</button>
+    </div>
+</div>
+
+<script>
+function generate() {
+    const email = document.getElementById('email').value.trim();
+    const rawUrl = document.getElementById('rawUrl').value.trim();
+    const resultDiv = document.getElementById('result');
+    const output = document.getElementById('finalUrl');
+
+    if (!email || !rawUrl) {
+        alert("Please fill in both fields.");
+        return;
+    }
+
+    const match = rawUrl.match(/read\/([A-Za-z0-9%_-]+)/);
+    if (match && match[1]) {
+        const itemId = match[1].split('?')[0];
+        const deepLink = `https://outlook.cloud.microsoft/mail/${email}/deeplink/read/${itemId}`;
+        output.innerText = deepLink;
+        resultDiv.style.display = 'block';
+    } else {
+        alert("Invalid URL. Make sure you refreshed (Fn + F5 on Mac) before copying.");
+    }
+}
+
+function copyText() {
+    const text = document.getElementById('finalUrl').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        alert("Copied!");
+    });
+}
+</script>
+
+</body>
+</html>
