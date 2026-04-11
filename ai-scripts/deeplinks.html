@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Outlook Deep Link Generator</title>
+
+    <!-- Description for search engines and previews -->
+    <meta name="description" content="Generates a permanent, sharable Outlook deep link for emails in shared mailboxes. Useful for ticketing, investigations, and collaboration." />
+
     <style>
         body { 
             font-family: "Segoe UI", Tahoma, sans-serif; 
@@ -21,7 +25,21 @@
             width: 100%;
         }
         h2 { color: #0078d4; margin-top: 0; }
-        .instructions { background: #f3f2f1; padding: 15px; border-left: 4px solid #0078d4; margin-bottom: 20px; font-size: 0.9em; }
+
+        .description {
+            margin-bottom: 20px;
+            font-size: 0.95em;
+            color: #605e5c;
+            line-height: 1.5;
+        }
+
+        .instructions { 
+            background: #f3f2f1; 
+            padding: 15px; 
+            border-left: 4px solid #0078d4; 
+            margin-bottom: 20px; 
+            font-size: 0.9em; 
+        }
         .mac-note { color: #d13438; font-weight: bold; margin-top: 10px; display: block; }
         label { display: block; font-weight: bold; margin-bottom: 5px; color: #323130; }
         input { 
@@ -66,10 +84,20 @@
 
 <div class="card">
     <h2>Outlook Deep Link Generator</h2>
+
+    <!-- Tool description -->
+    <div class="description">
+        <strong>What this tool does:</strong><br>
+        This utility converts a temporary Outlook Web URL (copied after refreshing an email)
+        into a <em>permanent deep link</em> for messages stored in a shared mailbox.
+        The generated link can be safely shared with teammates and will consistently open
+        the exact email in Outlook Web, even across sessions or devices.
+    </div>
+
     <div class="instructions">
         <strong>Instructions:</strong><br>
         1. Open email in Shared Mailbox.<br>
-        2. Click <strong>...</strong> > <strong>View</strong> > <strong>Open in new window</strong>.<br>
+        2. Click <strong>...</strong> &gt; <strong>View</strong> &gt; <strong>Open in new window</strong>.<br>
         3. <strong>Refresh the new window:</strong> 
            <br>&nbsp;&nbsp;&nbsp;• Windows: Press <strong>F5</strong>
            <br>&nbsp;&nbsp;&nbsp;• Mac: Press <strong>Fn + F5</strong>
