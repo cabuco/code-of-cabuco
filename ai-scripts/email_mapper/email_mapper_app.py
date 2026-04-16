@@ -1,127 +1,113 @@
-import streamlit as st
-import pandas as pd
+import subprocess
+import sys
+import os
 import io
 
+# --- AUTOMATIC DEPENDENCY CHECK ---
+def prepare_environment():
+    """Ensures all required libraries are installed before starting the app."""
+    required_libraries = ["streamlit", "pandas"]
+    for lib in required_libraries:
+        try:
+            __import__(lib)
+        except ImportError:
+            print(f"[{lib}] not found. Installing now...")
+            subprocess.check_call([sys.executable, "-m", "pip", "install", lib])
+
+# Run the check
+prepare_environment()
+
+# Now that we know they are installed, we can import them
+import streamlit as st
+import pandas as pd
+
+# --- HELPER FUNCTIONS ---
 def clean_data(series):
-    """Helper to ensure data is stripped and lowercase for consistent matching."""
+    """Consistent formatting for matching."""
     return series.astype(str).str.strip().str.lower()
 
-# --- Page Setup ---
-st.set_page_config(page_title="GitHub to Microsoft Email Mapper", layout="wide")
+# --- STREAMLIT UI ---
+def run_app():
+    st.set_page_config(page_title="Email Mapper Pro", layout="wide")
 
-st.title("📧 GitHub to Microsoft Email Mapper")
-st.markdown("""
-### Instructions:
-1.  **Upload the Okta Source of Truth:** This file provides the mapping between GitHub addresses (`profile.email`) and Microsoft aliases (`profile.msftAlias`).
-2.  **Upload the Member List:** A CSV containing the list of `Member Email` addresses you need to map.
-3.  **Automatic Deduplication:** The tool will automatically remove duplicate email entries from both files to ensure a clean result.
-4.  **Download the Result:** Get a CSV with unique **ObjectId** and **GitHub Email** pairs.
-""")
+    st.title("📧 GitHub to Microsoft Email Mapper")
+    st.info("Instructions: Just upload your two CSV files below. The tool handles deduplication and formatting automatically.")
 
-st.divider()
+    col1, col2 = st.columns(2)
 
-# --- Upload Controls ---
-col1, col2 = st.columns(2)
+    with col1:
+        st.subheader("1️⃣ Source of Truth")
+        okta_file = st.file_uploader("Upload Okta File", type=["csv"], help="Expected: 'profile.email' and 'profile.msftAlias'")
 
-with col1:
-    st.subheader("📁 Step 1: Source of Truth")
-    okta_file = st.file_uploader("Upload Okta File (e.g., okta_data_users.csv)", type=["csv"], key="okta")
+    with col2:
+        st.subheader("2️⃣ Member List")
+        member_file = st.file_uploader("Upload Member List", type=["csv"], help="Expected: 'Member Email'")
 
-with col2:
-    st.subheader("📁 Step 2: Member List")
-    member_file = st.file_uploader("Upload Member List (GitHub Emails)", type=["csv"], key="member")
+    if okta_file and member_file:
+        try:
+            df_okta = pd.read_csv(okta_file)
+            df_members = pd.read_csv(member_file)
 
-# --- Processing Engine ---
-if okta_file and member_file:
-    try:
-        # Load Data
-        df_okta = pd.read_csv(okta_file)
-        df_members = pd.read_csv(member_file)
+            # Column validation
+            okta_req = ['profile.email', 'profile.msftAlias']
+            member_req = ['Member Email']
 
-        # Validate Columns
-        required_okta = ['profile.email', 'profile.msftAlias']
-        required_member = ['Member Email']
+            if not all(c in df_okta.columns for c in okta_req) or not all(c in df_members.columns for c in member_req):
+                st.error("❌ Column mismatch detected. Ensure headers match the expected names exactly.")
+                return
 
-        okta_missing = [c for c in required_okta if c not in df_okta.columns]
-        member_missing = [c for c in required_member if c not in df_members.columns]
-
-        if okta_missing or member_missing:
-            if okta_missing:
-                st.error(f"❌ Okta file is missing columns: {', '.join(okta_missing)}")
-            if member_missing:
-                st.error(f"❌ Member list is missing column: {', '.join(member_missing)}")
-        else:
-            # --- Logic Starts Here ---
-            
-            # 1. Prepare Join Keys (Case-insensitive)
+            # --- CLEANING & DEDUPLICATION ---
+            # Prepare keys
             df_okta['join_key'] = clean_data(df_okta['profile.email'])
             df_members['join_key'] = clean_data(df_members['Member Email'])
 
-            # 2. DEDUPLICATION
-            # Remove duplicates from the source of truth based on the github email
+            # Count duplicates for the report
             okta_dupes = df_okta.duplicated(subset=['join_key']).sum()
-            df_okta = df_okta.drop_duplicates(subset=['join_key'], keep='first')
-
-            # Remove duplicates from the member list
             member_dupes = df_members.duplicated(subset=['join_key']).sum()
+
+            # Drop duplicates
+            df_okta = df_okta.drop_duplicates(subset=['join_key'], keep='first')
             df_members = df_members.drop_duplicates(subset=['join_key'], keep='first')
 
-            # 3. Create the Microsoft Email (ObjectId)
-            # Remove rows with empty aliases
+            # Build Microsoft Email
             df_okta = df_okta.dropna(subset=['profile.msftAlias'])
             df_okta['ObjectId'] = df_okta['profile.msftAlias'].astype(str).str.strip() + "@microsoft.com"
 
-            # 4. Perform the Merge
-            merged_df = pd.merge(
-                df_members,
-                df_okta[['join_key', 'ObjectId']],
-                on='join_key',
-                how='inner'
-            )
+            # --- MAPPING ---
+            merged = pd.merge(df_members, df_okta[['join_key', 'ObjectId']], on='join_key', how='inner')
 
-            # 5. Final Formatting
-            final_output = pd.DataFrame({
-                'ObjectId': merged_df['ObjectId'],
-                'GitHub Email': merged_df['Member Email']
+            # Format final output
+            final_df = pd.DataFrame({
+                'ObjectId': merged['ObjectId'],
+                'GitHub Email': merged['Member Email']
             })
 
-            # --- UI Results ---
+            # --- RESULTS ---
             st.divider()
-            st.subheader("✅ Mapping Complete")
-            
-            # Display Deduplication Info
             if okta_dupes > 0 or member_dupes > 0:
-                with st.expander("🔍 Deduplication Summary"):
-                    if okta_dupes > 0:
-                        st.info(f"Removed {okta_dupes} duplicate entries from the Okta Source file.")
-                    if member_dupes > 0:
-                        st.info(f"Removed {member_dupes} duplicate entries from the Member List.")
+                st.warning(f"🧹 Deduplication: Removed {okta_dupes} rows from Okta and {member_dupes} rows from Member list.")
 
-            # Show stats
-            col_a, col_b = st.columns(2)
-            col_a.metric("Unique Members Found", len(df_members))
-            col_b.metric("Successful Matches", len(final_output))
+            st.success(f"Successfully matched {len(final_df)} unique records.")
+            st.dataframe(final_df, use_container_width=True)
 
-            if not final_output.empty:
-                # Preview Table
-                st.write("### Preview of Results")
-                st.dataframe(final_output.head(15), use_container_width=True)
+            csv_buffer = io.StringIO()
+            final_df.to_csv(csv_buffer, index=False)
+            st.download_button("📥 Download Mapped CSV", data=csv_buffer.getvalue(), file_name="mapped_emails.csv", mime="text/csv")
 
-                # CSV Download Button
-                csv_buffer = io.StringIO()
-                final_output.to_csv(csv_buffer, index=False)
-                
-                st.download_button(
-                    label="📥 Download Cleaned CSV",
-                    data=csv_buffer.getvalue(),
-                    file_name="mapped_microsoft_emails.csv",
-                    mime="text/csv",
-                    use_container_width=True
-                )
-            else:
-                st.warning("No matches were found. Ensure the GitHub emails in your Member List appear in the Okta file.")
+        except Exception as e:
+            st.error(f"Critical Error: {e}")
 
-    except Exception as e:
-        st.error(f"An error occurred: {e}")
-else:
-    st.info("Please upload both CSV files to proceed.")
+# --- EXECUTION ---
+if __name__ == "__main__":
+    # Streamlit requires a specific way to be called if run from within a script
+    if "_HEROKU_STATS_REPORT_STATE" not in os.environ: 
+        # This part handles the "Fool Proof" execution
+        # If the user runs 'python run_mapper.py', it re-runs itself through streamlit
+        try:
+            import streamlit.web.cli as stcli
+            if not st._is_running_with_streamlit:
+                sys.argv = ["streamlit", "run", sys.argv[0]]
+                sys.exit(stcli.main())
+        except Exception:
+            pass
+    run_app()
