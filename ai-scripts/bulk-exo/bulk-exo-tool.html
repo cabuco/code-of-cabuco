@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EXO Bulk Tool v4</title>
+    <style>
+        body { font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; max-width: 1100px; margin: 40px auto; padding: 0 20px; background: #f8f9fa; color: #333; }
+        .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); border: 1px solid #e1e4e8; }
+        h2 { color: #0078d4; margin-top: 0; }
+        select, textarea, button { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccd0d5; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
+        
+        .split-container { display: flex; gap: 20px; margin-top: 10px; }
+        .column { flex: 1; }
+        textarea { height: 350px; font-family: 'Cascadia Code', monospace; background: #fafafa; resize: none; white-space: pre; overflow-wrap: normal; overflow-x: auto; }
+        
+        .status-bar { padding: 10px; border-radius: 6px; margin-bottom: 10px; font-weight: bold; font-size: 0.9rem; text-align: center; }
+        .match { background: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; }
+        .mismatch { background: #f8d7da; color: #842029; border: 1px solid #f5c2c7; }
+
+        .generate { background: #0078d4; color: white; border: none; font-weight: 600; cursor: pointer; margin-top: 20px; height: 55px; font-size: 1.1rem; border-radius: 6px; transition: 0.2s; }
+        .generate:hover { background: #005a9e; }
+        
+        .output-area { background: #1e1e1e; color: #d4d4d4; padding: 20px; border-radius: 8px; position: relative; font-family: 'Cascadia Code', monospace; font-size: 0.85rem; margin-top: 25px; display: none; overflow-x: auto; }
+        .copy-btn { position: absolute; top: 12px; right: 12px; width: auto; padding: 6px 12px; font-size: 0.75rem; background: #3a3d41; color: white; border: 1px solid #555; cursor: pointer; border-radius: 4px; }
+        
+        label { font-weight: 600; display: block; margin-top: 20px; }
+        .hint { font-size: 0.85rem; color: #666; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>EXO Bulk Command Builder</h2>
+    
+    <label>Step 1: Choose Task</label>
+    <select id="task" onchange="toggleUI()">
+        <option value="set-primary">Change Primary SMTP (Side-by-Side)</option>
+        <option value="cloud-check">Check if Exchange Cloud Managed</option>
+    </select>
+
+    <div id="mappingUI">
+        <div id="counter" class="status-bar" style="display:none;"></div>
+        <div class="split-container">
+            <div class="column">
+                <label>Microsoft Emails (Identities)</label>
+                <p class="hint">Ensure order matches GitHub list</p>
+                <textarea id="msftList" placeholder="user1@microsoft.com&#10;user2@microsoft.com" oninput="updateCounter()"></textarea>
+            </div>
+            <div class="column">
+                <label>GitHub Emails (New Primary)</label>
+                <p class="hint">Ensure order matches Microsoft list</p>
+                <textarea id="ghList" placeholder="user1@github.com&#10;user2@github.com" oninput="updateCounter()"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div id="checkUI" style="display:none;">
+        <label>Step 2: Paste Microsoft Emails</label>
+        <textarea id="singleEmailList" placeholder="user@microsoft.com"></textarea>
+    </div>
+
+    <button class="generate" onclick="generateCommand()">Generate PowerShell Command</button>
+
+    <div id="outputContainer" class="output-area">
+        <button class="copy-btn" id="copyBtn" onclick="copyToClipboard()">COPY ALL</button>
+        <code id="outputCode"></code>
+    </div>
+</div>
+
+<script>
+    function toggleUI() {
+        const task = document.getElementById('task').value;
+        document.getElementById('mappingUI').style.display = (task === 'set-primary') ? 'block' : 'none';
+        document.getElementById('checkUI').style.display = (task === 'cloud-check') ? 'block' : 'none';
+        document.getElementById('outputContainer').style.display = 'none';
+    }
+
+    function updateCounter() {
+        const msft = document.getElementById('msftList').value.trim().split('\n').filter(l => l.trim() !== "");
+        const gh = document.getElementById('ghList').value.trim().split('\n').filter(l => l.trim() !== "");
+        const counter = document.getElementById('counter');
+
+        if (msft.length === 0 && gh.length === 0) {
+            counter.style.display = 'none';
+            return;
+        }
+
+        counter.style.display = 'block';
+        if (msft.length === gh.length) {
+            counter.className = "status-bar match";
+            counter.innerText = `Perfect Match: ${msft.length} items in both lists.`;
+        } else {
+            counter.className = "status-bar mismatch";
+            counter.innerText = `Mismatch: ${msft.length} Microsoft emails vs ${gh.length} GitHub emails.`;
+        }
+    }
+
+    function generateCommand() {
+        const task = document.getElementById('task').value;
+        const codeElement = document.getElementById('outputCode');
+        let command = "";
+
+        if (task === 'cloud-check') {
+            const list = document.getElementById('singleEmailList').value.trim();
+            if (!list) return alert("Please paste emails first!");
+            
+            command = `$emails = @"\n${list}\n"@ -split "\`n" | % { $_.Trim() } | ? { $_ -ne "" }\n\n`;
+            command += `$emails | ForEach-Object {\n    try {\n        Get-Mailbox -Identity $_ -ErrorAction Stop | Select-Object DisplayName, PrimarySmtpAddress, IsExchangeCloudManaged\n    } catch {\n        Write-Warning "User not found: $_"\n    }\n}`;
+        } else {
+            const msftLines = document.getElementById('msftList').value.trim().split('\n').map(l => l.trim()).filter(l => l !== "");
+            const ghLines = document.getElementById('ghList').value.trim().split('\n').map(l => l.trim()).filter(l => l !== "");
+
+            if (msftLines.length === 0 || ghLines.length === 0) return alert("Both columns must have data!");
+            if (msftLines.length !== ghLines.length) return alert("Column counts do not match! Please align your lists.");
+
+            let csvData = "msft,github";
+            for (let i = 0; i < msftLines.length; i++) {
+                csvData += `\n${msftLines[i]},${ghLines[i]}`;
+            }
+
+            command = `$data = @"\n${csvData}\n"@ | ConvertFrom-Csv\n\n`;
+            command += `foreach ($line in $data) {\n`;
+            command += `    Write-Host "Updating $($line.msft)..." -ForegroundColor Cyan\n`;
+            command += `    Set-Mailbox -Identity $line.msft -EmailAddresses "SMTP:$($line.github)", "smtp:$($line.msft)"\n`;
+            command += `}`;
+        }
+
+        codeElement.innerText = command;
+        document.getElementById('outputContainer').style.display = 'block';
+    }
+
+    function copyToClipboard() {
+        const text = document.getElementById('outputCode').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = document.getElementById('copyBtn');
+            btn.innerText = "COPIED!";
+            setTimeout(() => { btn.innerText = "COPY ALL"; }, 2000);
+        });
+    }
+</script>
+
+</body>
+</html>
