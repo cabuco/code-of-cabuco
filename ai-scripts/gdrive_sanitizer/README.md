@@ -1,16 +1,16 @@
 # Google Drive Namespace Sanitization Toolkit
 
-A sanitized, repo-ready runbook and script reference for preparing Google Workspace Shared Drive content for migration into Microsoft 365 SharePoint Online.
+A sanitized, repo-ready guide for preparing Google Workspace Shared Drive content for migration into Microsoft 365 SharePoint Online.
 
-This README is written as a single-file operational guide for building rename manifests, reviewing migration blockers, and applying controlled renames with Standard GAM 7.x in a staging environment.
+This folder uses **PowerShell (`.ps1`) scripts**, not Python. The workflow builds CSV rename manifests from a Google Drive inventory export and then applies those renames with Standard GAM in a staging environment.
 
 ## Quick Start
 
 1. Export a Shared Drive inventory to `staging_inventory_fixed.csv`
-2. Generate the folder rename manifest
-3. Apply folder renames in staging
-4. Generate the file rename manifest
-5. Apply file renames in staging
+2. Run `BuildFolderManifest.ps1`
+3. Apply folder renames with `gam csv`
+4. Run `BuildFileManifest.ps1`
+5. Apply file renames with `gam csv`
 
 ## Purpose
 
@@ -22,7 +22,7 @@ This toolkit helps you:
 - identify rename candidates before migration
 - separate folder and file sanitization into distinct passes
 - generate CSV manifests for auditability and bulk execution
-- perform controlled renames using Standard GAM 7.x
+- perform controlled renames using Standard GAM
 
 ## Safety Model
 
@@ -33,14 +33,20 @@ This workflow is designed around a **staging-first** approach.
 - Use generated CSV manifests as an auditable record of proposed changes.
 - Rename folders before files to reduce path and hierarchy inconsistencies.
 
+## Current Files in This Folder
+
+- `BuildFolderManifest.ps1`
+- `BuildFileManifest.ps1`
+- `DEPLOYMENT_STEPS.md`
+- `README.md`
+
 ## Requirements
 
 | Requirement | Value |
 |---|---|
-| Operating System | macOS or compatible arm64 macOS environment |
-| Shell | `zsh` |
-| Python | Python 3 |
-| GAM Version | Standard GAM 7.32.03 or later |
+| Operating System | Windows environment with PowerShell support |
+| Shell | PowerShell 7+ and `cmd.exe` |
+| GAM Version | Standard GAM 7.40.00 or later |
 | GAM Binary Path | `[PATH_TO_GAM_BINARY]` |
 | Inventory Input | `staging_inventory_fixed.csv` |
 
@@ -63,185 +69,60 @@ Replace these values with environment-specific values before execution:
 
 ### Step 1: Export the Shared Drive Inventory
 
-Run this from your working directory:
-
-```bash
-cd ./[WORKING_DIRECTORY]
-gam user "[ADMIN_EMAIL]" print filelist select shareddriveid "[TARGET_DRIVE_ID]" showownedby any fields id,name,mimeType > ./staging_inventory_fixed.csv
+```powershell
+cd [WORKING_DIRECTORY]
+[PATH_TO_GAM_BINARY] user [ADMIN_EMAIL] print filelist select shareddriveid [TARGET_DRIVE_ID] showownedby any fields id,name,mimeType | Out-File -Encoding utf8 .\staging_inventory_fixed.csv
 ```
 
 This creates the input inventory used by both manifest compiler scripts.
 
 ### Step 2: Build the Folder Rename Manifest
 
-```bash
-python3 ./BuildFolderManifest.py
+```powershell
+pwsh .\BuildFolderManifest.ps1
 ```
 
 This scans the inventory and creates `gam_staging_folder_manifest.csv` for folder objects that require renaming.
 
 ### Step 3: Apply Folder Renames
 
-```bash
-gam csv ./gam_staging_folder_manifest.csv gam user "[ADMIN_EMAIL]" update drivefile "~GoogleObjectID" newfilename "~SanitizedStagingName"
+```bat
+[PATH_TO_GAM_BINARY] csv .\gam_staging_folder_manifest.csv gam user [ADMIN_EMAIL] update drivefile "~GoogleObjectID" newfilename "~SanitizedStagingName"
 ```
 
 ### Step 4: Build the File Rename Manifest
 
-```bash
-python3 ./BuildFileManifest.py
+```powershell
+pwsh .\BuildFileManifest.ps1
 ```
 
 This scans the inventory and creates `gam_staging_file_manifest.csv` for file objects that require renaming.
 
 ### Step 5: Apply File Renames
 
-```bash
-gam csv ./gam_staging_file_manifest.csv gam user "[ADMIN_EMAIL]" update drivefile "~GoogleObjectID" newfilename "~SanitizedStagingName"
+```bat
+[PATH_TO_GAM_BINARY] csv .\gam_staging_file_manifest.csv gam user [ADMIN_EMAIL] update drivefile "~GoogleObjectID" newfilename "~SanitizedStagingName"
 ```
 
-## Folder Manifest Compiler
+## Script Behavior
 
-```python name=BuildFolderManifest.py url=https://github.com/cabuco/code-of-cabuco/blob/main/ai-scripts/gdrive_sanitizer/README.md
-#!/usr/bin/env python3
-# =======================================================================
-#            SHARED DRIVE MIGRATION - FOLDER MANIFEST COMPILER
-# =======================================================================
+### `BuildFolderManifest.ps1`
 
-import os
-import csv
-import re
-import sys
+- reads `staging_inventory_fixed.csv`
+- filters for rows where `mimeType` is `application/vnd.google-apps.folder`
+- replaces blocked characters with `-`
+- collapses repeated hyphens
+- trims leading/trailing hyphens and whitespace
+- writes only changed rows to `gam_staging_folder_manifest.csv`
 
-csv_path = "./staging_inventory_fixed.csv"
-output_path = "./gam_staging_folder_manifest.csv"
+### `BuildFileManifest.ps1`
 
-print("[+] Initializing directory tree scanning pass for folder structures...")
-
-if not os.path.exists(csv_path):
-    print(f"[-] CRITICAL ERROR: Reference inventory file missing at: {csv_path}")
-    print("[!] Please ensure Step 1 inventory extraction has been performed successfully.")
-    sys.exit(1)
-
-blockers_regex = re.compile(r'[:\\/\*\?"<>\|]')
-consecutive_hyphens_regex = re.compile(r'-+')
-
-manifest_rows = []
-count = 0
-
-with open(csv_path, mode='r', encoding='utf-8-sig') as infile:
-    reader = csv.DictReader(infile)
-
-    if not {'id', 'name', 'mimeType'}.issubset(reader.fieldnames):
-        print("[-] CRITICAL ERROR: Input CSV column headers must contain 'id', 'name', and 'mimeType'.")
-        sys.exit(1)
-
-    for row in reader:
-        if row['mimeType'] == 'application/vnd.google-apps.folder':
-            original_name = row['name']
-            folder_id = row['id']
-
-            if not original_name or not folder_id:
-                continue
-
-            clean_name = original_name.strip()
-            clean_name = blockers_regex.sub('-', clean_name)
-            clean_name = consecutive_hyphens_regex.sub('-', clean_name)
-            clean_name = clean_name.strip('-').strip()
-
-            if original_name != clean_name and clean_name != "":
-                count += 1
-                manifest_rows.append({
-                    'GoogleObjectID': folder_id,
-                    'OriginalProdName': original_name,
-                    'SanitizedStagingName': clean_name,
-                    'ObjectType': 'Folder'
-                })
-
-fieldnames = ['GoogleObjectID', 'OriginalProdName', 'SanitizedStagingName', 'ObjectType']
-with open(output_path, mode='w', encoding='utf-8', newline='') as outfile:
-    writer = csv.DictWriter(outfile, fieldnames=fieldnames)
-    writer.writeheader()
-    writer.writerows(manifest_rows)
-
-print("=======================================================================")
-print("             FOLDER DATA MATRIX GENERATION COMPLETE                    ")
-print("=======================================================================")
-print(f"[SUCCESS] Mapped {count} custom folder mutations into the staging data plane.")
-print(f"[SUCCESS] Folder update manifest securely written to: {output_path}")
-print("[ACTION] You are now clear to launch Step 3 zsh renaming pass.")
-```
-
-## File Manifest Compiler
-
-```python name=BuildFileManifest.py url=https://github.com/cabuco/code-of-cabuco/blob/main/ai-scripts/gdrive_sanitizer/README.md
-#!/usr/bin/env python3
-# =======================================================================
-#             SHARED DRIVE MIGRATION - FILE MANIFEST COMPILER
-# =======================================================================
-
-import os
-import csv
-import re
-import sys
-
-csv_path = "./staging_inventory_fixed.csv"
-output_path = "./gam_staging_file_manifest.csv"
-
-print("[+] Initializing child directory scanning pass for individual file assets...")
-
-if not os.path.exists(csv_path):
-    print(f"[-] CRITICAL ERROR: Reference inventory file missing at: {csv_path}")
-    sys.exit(1)
-
-blockers_regex = re.compile(r'[:\\/\*\?"<>\|]')
-consecutive_hyphens_regex = re.compile(r'-+')
-
-manifest_rows = []
-count = 0
-
-with open(csv_path, mode='r', encoding='utf-8-sig') as infile:
-    reader = csv.DictReader(infile)
-
-    if not {'id', 'name', 'mimeType'}.issubset(reader.fieldnames):
-        print("[-] CRITICAL ERROR: Input CSV column headers must contain 'id', 'name', and 'mimeType'.")
-        sys.exit(1)
-
-    for row in reader:
-        if row['mimeType'] != 'application/vnd.google-apps.folder':
-            original_name = row['name']
-            file_id = row['id']
-
-            if not original_name or not file_id:
-                continue
-
-            clean_name = original_name.strip()
-            clean_name = blockers_regex.sub('-', clean_name)
-            clean_name = consecutive_hyphens_regex.sub('-', clean_name)
-            clean_name = clean_name.strip('-').strip()
-
-            if original_name != clean_name and clean_name != "":
-                count += 1
-                manifest_rows.append({
-                    'GoogleObjectID': file_id,
-                    'OriginalProdName': original_name,
-                    'SanitizedStagingName': clean_name,
-                    'ObjectType': 'File'
-                })
-
-fieldnames = ['GoogleObjectID', 'OriginalProdName', 'SanitizedStagingName', 'ObjectType']
-with open(output_path, mode='w', encoding='utf-8', newline='') as outfile:
-    writer = csv.DictWriter(outfile, fieldnames=fieldnames)
-    writer.writeheader()
-    writer.writerows(manifest_rows)
-
-print("=======================================================================")
-print("             FILE DATA MATRIX GENERATION COMPLETE                      ")
-print("=======================================================================")
-print(f"[SUCCESS] Mapped {count} file-level mutations into the staging data plane.")
-print(f"[SUCCESS] File update manifest securely written to: {output_path}")
-print("[ACTION] You are now clear to launch Step 5 zsh renaming pass.")
-```
+- reads `staging_inventory_fixed.csv`
+- filters for non-folder rows
+- replaces blocked characters with `-`
+- collapses repeated hyphens
+- trims leading/trailing hyphens and whitespace
+- writes only changed rows to `gam_staging_file_manifest.csv`
 
 ## Manifest Schema
 
@@ -254,9 +135,9 @@ Both generated manifest files use the same column structure:
 | `SanitizedStagingName` | Proposed sanitized name for staging |
 | `ObjectType` | Either `Folder` or `File` |
 
-## Rename Rules Applied by the Scripts
+## Rename Rules Applied
 
-The scripts currently:
+The PowerShell scripts currently:
 
 - trim leading and trailing whitespace
 - replace these blocked characters with `-`: `: \ / * ? " < > |`
@@ -268,8 +149,9 @@ The scripts currently:
 
 - The inventory file must exist before either script is run.
 - Folder renames should be completed before file renames.
-- The scripts require CSV headers: `id`, `name`, and `mimeType`.
+- The scripts expect CSV headers: `id`, `name`, and `mimeType`.
 - Only objects that actually require renaming are written to the output manifests.
+- `DEPLOYMENT_STEPS.md` contains the longer runbook, while this file is the concise overview.
 
 ## Caution
 
