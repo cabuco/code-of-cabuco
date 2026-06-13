@@ -8,7 +8,7 @@ $azcopyPath = "C:\Program Files\AzCopy\azcopy.exe"
 $zipOutDir  = "C:\VaultTemp\ZipOut"
 
 # Paste your real Azure Container SAS URL connection string below
-$sasUrl     = "https://<your_storage_account>.blob.core.windows.net/<your_container>?<your_sas_token_parameters>"
+$sasUrl     = "https://201bce56.blob.core.windows.net/201bce56?si=201bce56&spr=https&sv=2022-11-02&sr=c&sig=Qn8joBz09T6Aqi9NT2JCLYBzLADPVesWrfx4uwBicxw%3D"
 
 Write-Host "======================================================================" -ForegroundColor Green
 Write-Host " ENGINE INITIALIZED: Autonomous Cloud Synchronization Architecture" -ForegroundColor Green
