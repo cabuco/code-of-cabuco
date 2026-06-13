@@ -31,7 +31,7 @@ The migration is handled across two independent, simultaneous execution frames:
 
 ---
 
-## 🛠️ Prerequisites & Environmental Requirements
+## Prerequisites & Environmental Requirements
 
 Before launching execution frameworks, the migration host node must be configured with the following binaries and access structures:
 
@@ -51,66 +51,13 @@ Ensure your migration workstation node has a fast local scratch disk (SSD prefer
 
 ---
 
-## ⚖️ Execution Guide & Workflows
+## Execution Guide & Workflows
 
 ### Step 1: Initialize the Master Download Engine (Window 1)
 Launch your primary Administrator PowerShell terminal context. Execute your master collection framework script targeting your global user query matrix. This window handles account acquisition, data downloading, and compression.
 
 ### Step 2: Launch the Intelligent Upload Loop (Window 2)
-Open a separate, independent PowerShell window. Paste the following optimized background consumer script block. 
-
-*Sanitization Note: Update the $sasUrl variable inside the script with your real target Azure container endpoint link.*
-
---------------------------------------------------------------------------------
-# POWERSHELL CONSUMER SCRIPT CORE (PASTE INTO WINDOW 2)
---------------------------------------------------------------------------------
-# Explicit Configuration Framework
-$azcopyPath = "C:\Program Files\AzCopy\azcopy.exe"
-$zipOutDir  = "C:\VaultTemp\ZipOut"
-
-# Paste your real Azure Container SAS URL connection string below
-$sasUrl     = "https://<your_storage_account>.blob.core.windows.net/<your_container>?<your_sas_token_parameters>"
-
-Write-Host "======================================================================" -ForegroundColor Green
-Write-Host " ENGINE INITIALIZED: Autonomous Cloud Synchronization Architecture" -ForegroundColor Green
-Write-Host "======================================================================" -ForegroundColor Green
-
-while($true) {
-    Write-Host "`n[$(Get-Date -Format 'HH:mm:ss')] Scanning Exchange Waiting Room for finalized archives..." -ForegroundColor Cyan
-    
-    # Identify completed file containers resting on local storage
-    $zipFiles = Get-ChildItem -Path $zipOutDir -Filter "*.zip"
-    
-    if ($zipFiles.Count -eq 0) {
-        Write-Host " [Staging Status] Exchange directory clear. Sleeping for 5 minutes..." -ForegroundColor Gray
-    } else {
-        Write-Host " [Staging Status] Identified $($zipFiles.Count) package(s) ready for cloud deployment." -ForegroundColor Yellow
-        
-        foreach ($file in $zipFiles) {
-            # Extract core target entity out of string profile
-            $entityIdentity = $file.Name -replace "_Hold\.zip$", ""
-            
-            Write-Host "`n >>> Deploying Archive Package: $entityIdentity <<<" -ForegroundColor White -BackgroundColor DarkGreen
-            
-            # Execute Native high-speed copy stream operation 
-            & $azcopyPath copy $file.FullName $sasUrl --recursive
-            
-            # Reclaim local workspace storage assets upon verified transfer success
-            if ($LASTEXITCODE -eq 0) {
-                Write-Host " [SUCCESS] Cloud target committed successfully for $entityIdentity." -ForegroundColor Green
-                
-                # Immediate local disk sanitation lock
-                Remove-Item $file.FullName -Force
-                Write-Host " [INSULATION] Staging file safely purged from local drive array: $($file.Name)" -ForegroundColor Magenta
-            } else {
-                Write-Host " [CRITICAL] AzCopy execution faulted for $entityIdentity. Preserving file for re-evaluation pass." -ForegroundColor Red
-            }
-        }
-    }
-    
-    Start-Sleep -Seconds 300
-}
---------------------------------------------------------------------------------
+Open a separate, independent PowerShell window. Run the optimized background upload script loop (`AzCopyLoop.ps1`) to handle automated staging clearance.
 
 ---
 
@@ -120,14 +67,7 @@ while($true) {
 Because the Consumer engine clears the waiting room every 5 minutes on a per-file confirmation basis, C:\VaultTemp\ZipOut should remain low in total file counts. If this directory builds more than 50 items, it indicates that your local download/compression array outpaces your external network internet upload bandwidth capability.
 
 ### Instant Explorer Cloud Mount Verification (RClone Mount Workflow)
-If you need to verify your data architecture live within a GUI environment, you can map the Azure Cloud container directly to your Windows File Explorer as a virtual network adapter drive letter.
-
-Open a regular PowerShell terminal session (non-administrative session preferred to expose the mapping globally across your standard user profile) and execute the following rclone mount directive:
-
-cd C:\rclone
-.\rclone.exe mount :azureblob: z: --azureblob-sas-url "https://<your_storage_account>.blob.core.windows.net/<your_container>?<your_sas_token_parameters>" --vfs-cache-mode writes --network-mode
-
-*Note: Keep that terminal window open. Minimize it, and navigate to This PC in Windows File Explorer. You will see a functional Z: drive connected straight to your Azure container.*
+If you need to verify your data architecture live within a GUI environment, you can map the Azure Cloud container directly to your Windows File Explorer as a virtual network adapter drive letter. Refer to the standalone verification script for instructions.
 
 ---
 
