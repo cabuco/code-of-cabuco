@@ -26,8 +26,8 @@ The migration is handled across two independent, simultaneous execution frames:
                          │
                          └─► [Purge Local Zip File] (Automated Drive Insulation)
 
-1. The Producer (Window 1): A master automation script coordinates account exports from Google Vault, downloads raw items sequentially, compresses them locally using multi-threaded 7-Zip binaries into structured .zip target packages inside a waiting folder, and instantly drops the uncompressed staging directory to reclaim local disk space.
-2. The Consumer (Window 2): An autonomous background loop mirrors completed archive containers, calling Microsoft's native binary copy engine to blast the data to Azure at maximum pipe capability and instantly deleting the local .zip file upon cloud verification.
+1. The Producer (Window 1): A master automation script (`VaultProducer.ps1`) coordinates account exports from Google Vault, downloads raw items sequentially, compresses them locally using multi-threaded 7-Zip binaries into structured .zip target packages inside a waiting folder, and instantly drops the uncompressed staging directory to reclaim local disk space.
+2. The Consumer (Window 2): An autonomous background loop (`AzCopyLoop.ps1`) mirrors completed archive containers, calling Microsoft's native binary copy engine to blast the data to Azure at maximum pipe capability and instantly deleting the local .zip file upon cloud verification.
 
 ---
 
@@ -42,8 +42,10 @@ Ensure your migration workstation node has a fast local scratch disk (SSD prefer
 * <your_rclone_binary_directory> - Binaries and tracking registry root
 
 ### 2. Required Execution Binaries
+* GAM / GAMADV-XTD3: Configured with access to your Google Workspace Tenant and Google Vault API.
+* 7-Zip Engine: Installed locally to handle high-speed archive compression.
 * AzCopy Engine: Download the stand-alone executable from Microsoft and install/extract it into your system's executable path or utility folder.
-* RClone Engine (Optional Verification Mount): Extract the standalone rclone engine utility to your local binaries directory.
+* RClone Engine: Extract the standalone rclone engine utility to your local binaries directory to enable live cloud drive mapping.
 
 ### 3. Authentication Tokens & Endpoint Security
 * Google Cloud Identity Console: Ensure your running profile holds API delegation authority over the target Google Vault retention categories.
@@ -54,26 +56,13 @@ Ensure your migration workstation node has a fast local scratch disk (SSD prefer
 ## Execution Guide & Workflows
 
 ### Step 1: Initialize the Master Download Engine (Window 1)
-Launch your primary Administrator PowerShell terminal context. Execute your master collection framework script targeting your global user query matrix. This window handles account acquisition, data downloading, and compression.
+Launch your primary Administrator PowerShell terminal context. Execute your master collection framework script (`VaultProducer.ps1`) targeting your global user query matrix. This window handles account acquisition, data downloading, and compression.
 
 ### Step 2: Launch the Intelligent Upload Loop (Window 2)
 Open a separate, independent PowerShell window. Run the optimized background upload script loop (`AzCopyLoop.ps1`) to handle automated staging clearance.
 
----
-
-## Real-Time Monitoring & Verification Frameworks
-
-### Checking Drive Volumetrics
-Because the Consumer engine clears the waiting room every 5 minutes on a per-file confirmation basis, the staging directory should remain low in total file counts. If this directory builds more than 50 items, it indicates that your local download/compression array outpaces your external network internet upload bandwidth capability.
-
-### Instant Explorer Cloud Mount Verification (RClone Mount Workflow)
-If you want to verify your data architecture live within a graphical environment, you can map the remote Azure Cloud container directly to your Windows File Explorer as a virtual network adapter drive letter. 
-
-Open a standard user PowerShell prompt and execute the following unified command line:
-
-cd "<path_to_your_rclone_folder>"; .\rclone.exe mount :azureblob: <desired_drive_letter>: --azureblob-sas-url "<your_azure_container_sas_url>" --vfs-cache-mode writes --network-mode
-
-Note: Keep that terminal window open. Minimize it, and navigate to "This PC" in Windows File Explorer. You will see a functional, browseable drive letter connected straight to your cloud container.
+### Step 3: Live Real-Time Storage Verification
+To review the structural integrity of files arriving in the target cloud live from a graphical Windows context, execute the standalone repository file utility (`MountAzureDrive.ps1`) inside a standard user terminal instance to project your cloud container to a local virtual drive letter.
 
 ---
 
