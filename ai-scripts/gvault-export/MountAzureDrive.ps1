@@ -5,7 +5,7 @@
 
 # Configuration Parameters
 $rcloneDir  = "<path_to_your_rclone_folder>"
-$driveLetter = "<desired_drive_letter>" # Example: Z
+$driveLetter = "<desired_drive_letter>"
 $sasUrl     = "<your_azure_container_sas_url>"
 
 Write-Host "======================================================================" -ForegroundColor Green
