@@ -4,11 +4,11 @@
 # ==============================================================================
 
 # Explicit Configuration Framework
-$azcopyPath = "C:\Program Files\AzCopy\azcopy.exe"
-$zipOutDir  = "C:\VaultTemp\ZipOut"
+$azcopyPath = "<path_to_your_azcopy_executable>"
+$zipOutDir  = "<path_to_your_local_staging_zip_out_folder>"
 
 # Paste your real Azure Container SAS URL connection string below
-$sasUrl     = "https://201bce56.blob.core.windows.net/201bce56?si=201bce56&spr=https&sv=2022-11-02&sr=c&sig=Qn8joBz09T6Aqi9NT2JCLYBzLADPVesWrfx4uwBicxw%3D"
+$sasUrl     = "<your_azure_container_sas_url>"
 
 Write-Host "======================================================================" -ForegroundColor Green
 Write-Host " ENGINE INITIALIZED: Autonomous Cloud Synchronization Architecture" -ForegroundColor Green
