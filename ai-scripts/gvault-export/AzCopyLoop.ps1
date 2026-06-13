@@ -1,6 +1,6 @@
 # ==============================================================================
 # SCRIPT: AzCopy Background Consumer & Staging Purge Loop
-# Location: Run inside a dedicated background PowerShell window
+# Location: Run inside a dedicated background PowerShell window (Window 2)
 # ==============================================================================
 
 # Explicit Configuration Framework
