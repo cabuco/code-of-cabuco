@@ -75,7 +75,7 @@ foreach ($user in $users) {
         Write-Host " [CRITICAL] 7-Zip compression failure encountered for $targetEmail. Preserving raw workspace." -ForegroundColor Red
     }
     
-    # 5. Clean up remote Vault instance to avoid hitting Google cloud storage quotas
+    # 5. Clean up remote Vault instance to avoid hitting cloud storage quotas
     Write-Host " [Vault Cleanup] Deleting cloud export metadata container..." -ForegroundColor Gray
     & $gamPath vault delete export name $exportName matter $matterId
 }
