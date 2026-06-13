@@ -67,7 +67,13 @@ Open a separate, independent PowerShell window. Run the optimized background upl
 Because the Consumer engine clears the waiting room every 5 minutes on a per-file confirmation basis, the staging directory should remain low in total file counts. If this directory builds more than 50 items, it indicates that your local download/compression array outpaces your external network internet upload bandwidth capability.
 
 ### Instant Explorer Cloud Mount Verification (RClone Mount Workflow)
-If you need to verify your data architecture live within a GUI environment, you can map the Azure Cloud container directly to your Windows File Explorer as a virtual network adapter drive letter. Refer to the standalone verification script for instructions.
+If you want to verify your data architecture live within a graphical environment, you can map the remote Azure Cloud container directly to your Windows File Explorer as a virtual network adapter drive letter. 
+
+Open a standard user PowerShell prompt and execute the following unified command line:
+
+cd "<path_to_your_rclone_folder>"; .\rclone.exe mount :azureblob: <desired_drive_letter>: --azureblob-sas-url "<your_azure_container_sas_url>" --vfs-cache-mode writes --network-mode
+
+Note: Keep that terminal window open. Minimize it, and navigate to "This PC" in Windows File Explorer. You will see a functional, browseable drive letter connected straight to your cloud container.
 
 ---
 
