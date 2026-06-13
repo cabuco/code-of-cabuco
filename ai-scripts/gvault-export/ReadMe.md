@@ -14,11 +14,11 @@ The migration is handled across two independent, simultaneous execution frames:
                          │
                          │ (Window 1: Multi-Threaded Staged Download)
                          ▼
-             📂 C:\VaultTemp\Workspace  (Transient Processing Folder)
+             📂 <your_temp_workspace_folder>
                          │
                          │ (7-Zip Inline High Compression)
                          ▼
-             📦 C:\VaultTemp\ZipOut\    (Staging Waiting Room)
+             📦 <your_staging_zip_out_folder>
                          │
                          │ (Window 2: High-Speed Engine Sweep Loop)
                          ▼
@@ -36,14 +36,14 @@ The migration is handled across two independent, simultaneous execution frames:
 Before launching execution frameworks, the migration host node must be configured with the following binaries and access structures:
 
 ### 1. Local Staging Folder Architecture
-Ensure your migration workstation node has a fast local scratch disk (SSD preferred) with at least 300GB–500GB of working headroom. Establish the following structure:
-* C:\VaultTemp\ - Root workspace
-* C:\VaultTemp\ZipOut\ - Inter-process exchange staging directory
-* C:\rclone\ - Binaries and tracking registry root
+Ensure your migration workstation node has a fast local scratch disk (SSD preferred) with adequate working headroom. Establish the following structure:
+* <your_temp_workspace_folder> - Root workspace
+* <your_staging_zip_out_folder> - Inter-process exchange staging directory
+* <your_rclone_binary_directory> - Binaries and tracking registry root
 
 ### 2. Required Execution Binaries
-* AzCopy Engine: Download the stand-alone executable from Microsoft and install/extract it into C:\Program Files\AzCopy\azcopy.exe.
-* RClone Engine (Optional Verification Mount): Extract the standalone rclone engine utility to C:\rclone\rclone.exe.
+* AzCopy Engine: Download the stand-alone executable from Microsoft and install/extract it into your system's executable path or utility folder.
+* RClone Engine (Optional Verification Mount): Extract the standalone rclone engine utility to your local binaries directory.
 
 ### 3. Authentication Tokens & Endpoint Security
 * Google Cloud Identity Console: Ensure your running profile holds API delegation authority over the target Google Vault retention categories.
@@ -64,7 +64,7 @@ Open a separate, independent PowerShell window. Run the optimized background upl
 ## Real-Time Monitoring & Verification Frameworks
 
 ### Checking Drive Volumetrics
-Because the Consumer engine clears the waiting room every 5 minutes on a per-file confirmation basis, C:\VaultTemp\ZipOut should remain low in total file counts. If this directory builds more than 50 items, it indicates that your local download/compression array outpaces your external network internet upload bandwidth capability.
+Because the Consumer engine clears the waiting room every 5 minutes on a per-file confirmation basis, the staging directory should remain low in total file counts. If this directory builds more than 50 items, it indicates that your local download/compression array outpaces your external network internet upload bandwidth capability.
 
 ### Instant Explorer Cloud Mount Verification (RClone Mount Workflow)
 If you need to verify your data architecture live within a GUI environment, you can map the Azure Cloud container directly to your Windows File Explorer as a virtual network adapter drive letter. Refer to the standalone verification script for instructions.
