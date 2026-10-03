@@ -1,0 +1,21 @@
+{
+  "name": "Rosetta — Slack Export PDF Converter",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "postCreateCommand": "bash ai-scripts/slack/rosetta/setup.sh",
+  "postStartCommand": "bash ai-scripts/slack/rosetta/start.sh",
+  "postAttachCommand": "bash ai-scripts/slack/rosetta/start.sh",
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": {
+      "label": "Rosetta Web App",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python"
+      ]
+    }
+  }
+}
