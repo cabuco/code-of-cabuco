@@ -4,6 +4,7 @@
 The heavy lifting happens in converter.py, launched as a separate background process,
 so large conversions survive browser disconnects and never block the UI.
 """
+import io
 import json
 import os
 import shutil
@@ -32,11 +33,53 @@ MAX_BROWSER_DOWNLOAD_MB = 500
 st.set_page_config(page_title="Rosetta - Slack Export PDF Converter", page_icon="📜", layout="centered")
 st.title("📜 Rosetta")
 st.caption("Turn an official Slack export .zip into readable PDFs with real names instead of IDs.")
-st.info(
-    "🔒 Everything runs inside **your isolated environment** — nothing is sent anywhere else. "
-    "Your export and the generated PDFs stay on disk until you remove them "
-    "(see **Clean up** at the bottom, or delete the environment when finished)."
+
+# --- DEMO ARCHIVE GENERATOR ---
+def create_sample_slack_zip():
+    """Generates a mock Slack export zip with users, channels, and DMs for portfolio demos."""
+    sample_path = INPUT_DIR / "Sample_Slack_Export_Demo.zip"
+    if sample_path.exists():
+        return sample_path
+
+    users_data = [
+        {"id": "U01ALEXCHEN", "name": "alex.chen", "real_name": "Alex Chen", "profile": {"real_name": "Alex Chen", "display_name": "alexc"}},
+        {"id": "U02SARAHC", "name": "sarah.connor", "real_name": "Sarah Connor", "deleted": True, "profile": {"real_name": "Sarah Connor", "display_name": "sarahc"}},
+        {"id": "U03BOTSYS", "name": "sec-bot", "is_bot": True, "profile": {"real_name": "Security Bot"}}
+    ]
+    channels_data = [{"id": "C01GENERAL", "name": "general"}]
+    dms_data = [{"id": "D01DM123", "members": ["U01ALEXCHEN", "U02SARAHC"]}]
+
+    general_msgs = [
+        {"ts": "1704096000.000100", "user": "U01ALEXCHEN", "text": "Welcome to the enterprise Slack audit demo! <@U02SARAHC> status check?"},
+        {"ts": "1704096060.000200", "user": "U02SARAHC", "text": "Audit complete. Deactivation scheduled.", "thread_ts": "1704096000.000100", "reply_count": 1},
+        {"ts": "1704096120.000300", "user": "U03BOTSYS", "text": "Alert: Group roster drift detected in `#general`"}
+    ]
+
+    with zipfile.ZipFile(sample_path, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("users.json", json.dumps(users_data))
+        z.writestr("channels.json", json.dumps(channels_data))
+        z.writestr("dms.json", json.dumps(dms_data))
+        z.writestr("general/2024-01-01.json", json.dumps(general_msgs))
+        z.writestr("dms/2024-01-01.json", json.dumps(general_msgs))
+
+    return sample_path
+
+# --- SIDEBAR & MODE SELECTOR ---
+st.sidebar.markdown("## 1️⃣ Execution Mode")
+mode = st.sidebar.radio(
+    "Choose Input Source:",
+    ["🧪 Demo / Sample Export Mode", "📁 Local Upload / Folder Archive"],
+    key="rosetta_mode"
 )
+
+if mode == "🧪 Demo / Sample Export Mode":
+    st.info("💡 Running in Portfolio Demo Mode. A mock Slack export archive (`Sample_Slack_Export_Demo.zip`) has been generated.")
+    sample_archive = create_sample_slack_zip()
+else:
+    st.info(
+        "🔒 Everything runs inside **your isolated environment** — nothing is sent anywhere else. "
+        "Your export and the generated PDFs stay on disk until you remove them."
+    )
 
 # ----------------------------------------------------------------------------- helpers
 def human(n):
@@ -61,7 +104,6 @@ def pid_alive(pid):
 
 @st.cache_resource
 def engine_error():
-    """None if WeasyPrint works, else the error text."""
     try:
         from weasyprint import HTML
         HTML(string="<p>self-test</p>").write_pdf()
@@ -153,13 +195,17 @@ if st.session_state.get("job"):
 
 # ----------------------------------------------------------------------------- step 1: choose file
 st.subheader("1 · Choose your Slack export")
-st.markdown(
-    "Drag your Slack export **.zip** into the **`ai-scripts/slack/rosetta/input`** folder in the Explorer panel, "
-    "then click **Refresh list**."
-)
-zips = find_zips()
-if st.button("🔄 Refresh list"):
-    st.rerun()
+if mode == "🧪 Demo / Sample Export Mode":
+    zips = [INPUT_DIR / "Sample_Slack_Export_Demo.zip"]
+else:
+    st.markdown(
+        "Drag your Slack export **.zip** into the **`ai-scripts/slack/rosetta/input`** folder in the Explorer panel, "
+        "then click **Refresh list**."
+    )
+    zips = find_zips()
+    if st.button("🔄 Refresh list"):
+        st.rerun()
+
 zip_path = None
 if zips:
     zip_path = st.selectbox("Detected archives", zips,
@@ -186,8 +232,6 @@ if not rows:
     st.stop()
 
 st.success(f"Found {len(rows)} conversations and {info['users']} users in `{zip_path.name}`.")
-if not info["has_users_json"]:
-    st.warning("No users.json found — names can only be resolved where messages carry profile info.")
 
 st.subheader("2 · Options")
 labels = {r["folder"]: f"{r['label']}  ({r['days']} days, {r['first']} → {r['last']})" for r in rows}
