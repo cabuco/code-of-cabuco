@@ -36,7 +36,7 @@ I make sure the person who does has the right target.
 
 ## 🧰 Featured Automations & Tools
 
-To eliminate repetitive manual tasks, accelerate cross-platform audits, and streamline IT operations, I build and maintain custom cloud-hosted tools. Each runs inside an isolated GitHub Codespace environment.
+To eliminate repetitive manual tasks, accelerate cross-platform audits, and streamline IT operations, I build and maintain custom cloud-hosted tools. Each runs inside its own isolated GitHub Codespace container.
 
 ### ⚡ [Entra Vs. Okta Suite (EvO)](./ai-scripts/EvO)
 An enterprise IT automation utility built with Python and Streamlit to audit identity drift, automate deprovisioning workflows, and translate directory objects between Okta and Microsoft Entra ID.
@@ -52,12 +52,14 @@ An enterprise IT automation utility built with Python and Streamlit to audit ide
 
 ---
 
-### 📜 Rosetta — Slack Export PDF Converter
+### 📜 [Rosetta — Slack Export PDF Converter](./ai-scripts/slack/rosetta)
 Decodes official, unstructured Slack export `.zip` archives and converts them into clean, human-readable PDF reports for Legal, HR, and compliance investigations.
 
 * **Identity Resolution:** Maps raw Slack user IDs, channel IDs, and DMs to display names.
 * **Streaming Processing:** Handles multi-gigabyte Slack exports without crashing by streaming conversations into split PDF reports.
 * **Privacy-First:** Processes archives entirely inside an isolated Codespace container with zero external data transfer.
+
+👉 [View Rosetta Documentation & Usage Guide](./ai-scripts/slack/rosetta/README.md)
 
 ---
 
