@@ -1,0 +1,21 @@
+{
+  "name": "Entra Vs. Okta Suite (EvO)",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "postCreateCommand": "pip install -r ai-scripts/EvO/requirements.txt",
+  "postStartCommand": "bash ai-scripts/EvO/start.sh",
+  "postAttachCommand": "bash ai-scripts/EvO/start.sh",
+  "forwardPorts": [8501],
+  "portsAttributes": {
+    "8501": {
+      "label": "Entra Vs. Okta Suite (EvO) Web App",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python"
+      ]
+    }
+  }
+}
