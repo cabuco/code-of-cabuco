@@ -31,9 +31,19 @@ def process_input(upload_file, pasted_text, default_col_name="Data"):
         return pd.DataFrame({default_col_name: data})
     return None
 
+# --- MOCK DATA GENERATOR FOR PORTFOLIO DEMOS ---
+def generate_mock_okta_directory():
+    return pd.DataFrame([
+        {"id": "00u1a2b3c4d5e6f7g8h1", "profile.email": "alex.chen@yourdomain.com", "profile.msftAlias": "alchen@microsoft.com", "status": "ACTIVE", "profile.firstName": "Alex", "profile.lastName": "Chen"},
+        {"id": "00u1a2b3c4d5e6f7g8h2", "profile.email": "sarah.connor@yourdomain.com", "profile.msftAlias": "sconnor@microsoft.com", "status": "ACTIVE", "profile.firstName": "Sarah", "profile.lastName": "Connor"},
+        {"id": "00u1a2b3c4d5e6f7g8h3", "profile.email": "johndoe@yourdomain.com", "profile.msftAlias": "johnd@microsoft.com", "status": "DEACTIVATED", "profile.firstName": "John", "profile.lastName": "Doe"},
+        {"id": "00u1a2b3c4d5e6f7g8h4", "profile.email": "emily.watson@yourdomain.com", "profile.msftAlias": "ewatson@microsoft.com", "status": "SUSPENDED", "profile.firstName": "Emily", "profile.lastName": "Watson"},
+        {"id": "00u1a2b3c4d5e6f7g8h5", "profile.email": "m.smith@yourdomain.com", "profile.msftAlias": "msmith@microsoft.com", "status": "ACTIVE", "profile.firstName": "Marcus", "profile.lastName": "Smith"},
+    ])
+
 # --- TAB 6 HELPERS ---
 def parse_offboarding_lines(raw_text):
-    """Parse 'user + ticket' lines. Handles Zendesk subject lines and full ticket URLs."""
+    """Parse 'user + ticket' lines. Handles ticketing subject lines and full ticket URLs."""
     parsed_entries = []
     for line in [l.strip() for l in raw_text.split("\n") if l.strip()]:
         url_match = re.search(r'/tickets/(\d{5,8})\b', line)
@@ -205,9 +215,6 @@ def select_non_abm_tickets(mac_map, pasted_serials, mode_not_found):
             })
     return close_ids, evidence
 
-def raw_serials_for_view(text):
-    return [s.strip().upper() for s in re.split(r'[\n,\t]+', text or "") if s.strip()]
-
 # --- STREAMLIT UI ---
 st.set_page_config(page_title="Entra Vs. Okta Suite (EvO)", layout="wide")
 st.title("🏢 Entra Vs. Okta Suite (EvO)")
@@ -227,11 +234,16 @@ okta_df = None
 st.sidebar.markdown("## 1️⃣ Directory Source (Okta)")
 okta_source_mode = st.sidebar.radio(
     "Okta Ingestion Mode:", 
-    ["⚡ Live Okta API Connection", "📁 Upload / Paste CSV File"], 
+    ["🧪 Demo / Mock Data Mode", "⚡ Live Okta API Connection", "📁 Upload / Paste CSV File"], 
     key="m_okta_mode"
 )
 
-if okta_source_mode == "⚡ Live Okta API Connection":
+if okta_source_mode == "🧪 Demo / Mock Data Mode":
+    st.sidebar.info("💡 Running in Portfolio Demo Mode with pre-populated directory records.")
+    st.session_state["shared_okta_df"] = generate_mock_okta_directory()
+    okta_df = st.session_state["shared_okta_df"]
+
+elif okta_source_mode == "⚡ Live Okta API Connection":
     st.sidebar.caption("Use a Read-Only SSWS token to stream the Okta Directory live.")
     sidebar_okta_domain = st.sidebar.text_input(
         "Okta Org Domain:", 
@@ -325,7 +337,7 @@ if okta_df is not None:
 with tab1:
     st.subheader("Map Custom Member Lists Between Platform Handles & Corporate Profiles")
     if okta_df is None:
-        st.info("👋 Connect to Okta via **API** or upload your **Okta CSV** in the sidebar to get started.")
+        st.info("👋 Connect to Okta via **API**, select **Demo Mode**, or upload your **Okta CSV** in the sidebar to get started.")
     else:
         mapping_mode = st.radio("Mapping Direction:", ["Source Email ➔ Microsoft ObjectID", "Microsoft Email ➔ Source Email"], horizontal=True, key="t1_mode")
         
@@ -336,7 +348,8 @@ with tab1:
             member_file = st.file_uploader("Upload Member CSV", type=["csv"], key="file_mem")
             if member_file: member_df = pd.read_csv(member_file, low_memory=False)
         else:
-            member_text = st.text_area("Paste Input Emails", height=150, key="txt_mem")
+            default_demo_text = "alex.chen@yourdomain.com\nsarah.connor@yourdomain.com\nemily.watson@yourdomain.com" if okta_source_mode == "🧪 Demo / Mock Data Mode" else ""
+            member_text = st.text_area("Paste Input Emails", value=default_demo_text, height=150, key="txt_mem")
             if member_text: member_df = process_input(None, member_text, "Member Email")
 
         if member_df is not None:
@@ -456,40 +469,28 @@ with tab6:
     sb_domain_t6 = st.session_state.get("sb_okta_domain", "").strip()
     sb_token_t6 = st.session_state.get("sb_okta_token", "").strip()
 
-    if not sb_domain_t6 or not sb_token_t6:
-        st.warning("⚠️️ Live Okta API connection required. Enter your Okta Org Domain and SSWS Secret Token in the left sidebar.")
+    if okta_source_mode != "🧪 Demo / Mock Data Mode" and (not sb_domain_t6 or not sb_token_t6):
+        st.warning("⚠️ Live Okta API connection or Demo Mode required. Select Demo Mode or enter your credentials in the left sidebar.")
     else:
         st.markdown("#### 1️⃣ Input Offboarded Users & Ticket Numbers")
         
-        with st.expander("💡 How to Quickly Extract Username & Ticket ID Batches", expanded=False):
-            st.markdown("""
-            **Fast 3-Step Extraction Workflow:**
-            1. Open your **Zendesk Offboarding View** (or select all offboarding tickets in your queue).
-            2. Select all text on the page (`Cmd+A` / `Ctrl+A`) or highlight the table, and copy it (`Cmd+C` / `Ctrl+C`).
-            3. Paste the copied text into your AI assistant (e.g., Copilot or ChatGPT) with this prompt:
-            
-            > *"Extract the username and corresponding ticket ID for each offboarding ticket in this text, and output them line-by-line in the format: `username ticket_id`"*
-            
-            4. Copy the AI's clean list and paste it directly into the input text box below.
-            """)
-
         c_input, c_reset = st.columns([0.85, 0.15])
         with c_reset:
             if st.button("🗑️ Clear & Reset", use_container_width=True, key="btn_reset_t6"):
                 for k in [
                     "txt_offboarded_users", "txt_pasted_abm_serials", "t6_audit_df", 
                     "t6_matched_devices_df", "t6_no_dev_chunks", "t6_non_mac_chunks", 
-                    "t6_non_abm_chunks", "t6_abm_serials", "t6_macbook_map", 
-                    "t6_abm_evidence", "t6_abm_unknown_serials", "t6_raw_sample"
+                    "t6_non_abm_chunks", "t6_abm_serials", "t6_macbook_map"
                 ]:
                     if k in st.session_state:
                         del st.session_state[k]
                 st.rerun()
 
+        demo_offboard_placeholder = "sconnor 120946\n120947 - ewatson\njohnd https://company-it.zendesk.com/agent/tickets/120948"
         offboarded_text = st.text_area(
             "Paste Offboarded User Entries (User + Ticket ID per line):", 
+            value=demo_offboard_placeholder if okta_source_mode == "🧪 Demo / Mock Data Mode" else "",
             height=180, 
-            placeholder="jhofman 120946\n120947 - paull\npogupta https://company-it.zendesk.com/agent/tickets/120948",
             key="txt_offboarded_users"
         )
 
@@ -497,267 +498,4 @@ with tab6:
             if not offboarded_text.strip():
                 st.warning("⚠️ Please paste at least one entry.")
             else:
-                for k in [
-                    "t6_audit_df", "t6_matched_devices_df", "t6_no_dev_chunks", 
-                    "t6_non_mac_chunks", "t6_non_abm_chunks", "t6_abm_serials", 
-                    "t6_macbook_map", "t6_abm_evidence", "t6_abm_unknown_serials", 
-                    "t6_raw_sample", "t6_unresolved_count", "t6_no_dev_count", 
-                    "t6_non_mac_count", "t6_mac_count"
-                ]:
-                    if k in st.session_state:
-                        del st.session_state[k]
-
-                clean_dom = sb_domain_t6.replace("https://", "").replace("http://", "").strip("/")
-                api_base = f"https://{clean_dom}"
-                headers = {
-                    "Authorization": f"SSWS {sb_token_t6}",
-                    "Accept": "application/json",
-                    "Content-Type": "application/json"
-                }
-
-                parsed_inputs = parse_offboarding_lines(offboarded_text)
-                matched_devices = []
-                audit_records = []
-                no_device_ticket_ids = []
-                unresolved_ticket_ids = []
-                raw_sample_holder = {}
-                non_mac_ticket_ids = []
-                macbook_serials = []
-                macbook_ticket_serial_map = []
-
-                with st.spinner(f"Checking Okta devices for {len(parsed_inputs)} line entry(ies)..."):
-                    ident_map = build_okta_identity_map(okta_df)
-
-                    def okta_get(path):
-                        try:
-                            r = requests.get(f"{api_base}{path}", headers=headers, timeout=15)
-                            try:
-                                return r.status_code, r.json()
-                            except Exception:
-                                return r.status_code, None
-                        except Exception:
-                            return None, None
-
-                    for entry_item in parsed_inputs:
-                        user_entry = entry_item["user_entry"]
-                        ticket_id = entry_item["ticket_id"]
-
-                        resolution = resolve_okta_user(user_entry, ident_map, okta_get)
-                        okta_user_id = resolution["id"]
-
-                        user_dev_list = []
-                        device_fetch_failed = False
-                        if okta_user_id:
-                            try:
-                                dev_resp = requests.get(f"{api_base}/api/v1/users/{okta_user_id}/devices", headers=headers, timeout=15)
-                                if dev_resp.status_code == 200:
-                                    user_dev_list = dev_resp.json()
-                                    if user_dev_list and "t6_raw_sample" not in raw_sample_holder:
-                                        raw_sample_holder["t6_raw_sample"] = user_dev_list[0]
-                                else:
-                                    device_fetch_failed = True
-                            except Exception:
-                                user_dev_list = []
-                                device_fetch_failed = True
-
-                        serials_str = models_str = mfrs_str = platforms_str = "N/A"
-                        dev_count = 0
-                        if user_dev_list:
-                            status_flag = "🚨 Device Enrolled (Collection Needed)"
-                            serials_list = []
-                            models_list = []
-                            manufacturers_list = []
-                            platforms_list = []
-                            has_macbook = False
-
-                            for dev_binding in user_dev_list:
-                                hardware_info = parse_device_hardware(dev_binding)
-                                is_mac = is_macbook(hardware_info)
-
-                                if is_mac:
-                                    has_macbook = True
-                                    s_clean = hardware_info["serial"].strip().upper()
-                                    if s_clean and s_clean != "N/A":
-                                        macbook_serials.append(s_clean)
-                                        if ticket_id:
-                                            macbook_ticket_serial_map.append({
-                                                "ticket_id": ticket_id,
-                                                "serial": s_clean,
-                                                "user": user_entry,
-                                                "okta_id": okta_user_id,
-                                                "okta_login": resolution["login"],
-                                                "method": resolution["method"]
-                                            })
-
-                                if hardware_info["serial"] != "N/A": serials_list.append(hardware_info["serial"])
-                                if hardware_info["model"] != "N/A": models_list.append(hardware_info["model"])
-                                if hardware_info["manufacturer"] != "N/A": manufacturers_list.append(hardware_info["manufacturer"])
-                                if hardware_info["platform"] != "N/A": platforms_list.append(hardware_info["platform"])
-
-                                matched_devices.append({
-                                    "User Email / Handle": user_entry,
-                                    "Zendesk Ticket ID": ticket_id if ticket_id else "N/A",
-                                    "Display Name": hardware_info["displayName"],
-                                    "Platform": hardware_info["platform"],
-                                    "Manufacturer": hardware_info["manufacturer"],
-                                    "Model": hardware_info["model"],
-                                    "Serial Number": hardware_info["serial"],
-                                    "Management Status": hardware_info["status"],
-                                    "Enrollment Date": dev_binding.get("created", "N/A")
-                                })
-
-                            if not has_macbook and ticket_id:
-                                non_mac_ticket_ids.append(ticket_id)
-
-                            serials_str = ", ".join(list(set(serials_list))) if serials_list else "N/A"
-                            models_str = ", ".join(list(set(models_list))) if models_list else "N/A"
-                            mfrs_str = ", ".join(list(set(manufacturers_list))) if manufacturers_list else "N/A"
-                            platforms_str = ", ".join(list(set(platforms_list))) if platforms_list else "N/A"
-                            dev_count = len(user_dev_list)
-                        elif not okta_user_id:
-                            status_flag = "❓ Okta User Not Resolved (Verify Manually)"
-                            if ticket_id:
-                                unresolved_ticket_ids.append(ticket_id)
-                        elif device_fetch_failed:
-                            status_flag = "⚠️ Device Lookup Failed (Verify Manually)"
-                            if ticket_id:
-                                unresolved_ticket_ids.append(ticket_id)
-                        else:
-                            status_flag = "✅ No Devices Enrolled (Safe)"
-                            if ticket_id:
-                                no_device_ticket_ids.append(ticket_id)
-
-                            serials_str = "N/A"
-                            models_str = "N/A"
-                            mfrs_str = "N/A"
-                            platforms_str = "N/A"
-                            dev_count = 0
-
-                        audit_records.append({
-                            "Provided Offboarded User": user_entry,
-                            "Zendesk Ticket ID": ticket_id if ticket_id else "N/A",
-                            "Collection Status": status_flag,
-                            "Devices Count": dev_count,
-                            "Platform": platforms_str,
-                            "Manufacturer": mfrs_str,
-                            "Associated Device Models": models_str,
-                            "Associated Serial Numbers": serials_str,
-                            "Okta User ID": okta_user_id or "N/A",
-                            "Resolved Okta Login": resolution["login"] or "N/A",
-                            "Match Method": resolution["method"],
-                            "Match Note": resolution["note"]
-                        })
-
-                full_audit_df = pd.DataFrame(audit_records)
-                matched_devices_df = pd.DataFrame(matched_devices)
-
-                no_dev_chunks = build_zd_search_chunks(no_device_ticket_ids, max_per_chunk=25)
-                non_mac_chunks = build_zd_search_chunks(non_mac_ticket_ids, max_per_chunk=25)
-
-                clean_unique_mac_serials = list(dict.fromkeys(macbook_serials))
-                abm_serials_formatted = ", ".join(clean_unique_mac_serials) if clean_unique_mac_serials else "No MacBook serials found."
-
-                st.session_state["t6_audit_df"] = full_audit_df
-                st.session_state["t6_matched_devices_df"] = matched_devices_df
-                st.session_state["t6_no_dev_chunks"] = no_dev_chunks
-                st.session_state["t6_non_mac_chunks"] = non_mac_chunks
-                st.session_state["t6_abm_serials"] = abm_serials_formatted
-                st.session_state["t6_macbook_map"] = macbook_ticket_serial_map
-                st.session_state["t6_raw_sample"] = raw_sample_holder.get("t6_raw_sample")
-                st.session_state["t6_unresolved_count"] = len(unresolved_ticket_ids)
-                st.session_state["t6_no_dev_count"] = len(no_device_ticket_ids)
-                st.session_state["t6_non_mac_count"] = len(non_mac_ticket_ids)
-                st.session_state["t6_mac_count"] = len(clean_unique_mac_serials)
-
-    if "t6_audit_df" in st.session_state:
-        st.divider()
-        m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Offboarded Users Checked", len(st.session_state["t6_audit_df"]))
-        m2.metric("🚨 Users WITH Hardware to Collect", len(st.session_state["t6_matched_devices_df"]["User Email / Handle"].unique()) if not st.session_state["t6_matched_devices_df"].empty else 0, delta_color="inverse")
-        m3.metric("✅ Safe (No Devices Enrolled)", st.session_state.get("t6_no_dev_count", 0))
-        m4.metric("❓ Unresolved / Verify Manually", st.session_state.get("t6_unresolved_count", 0))
-
-        st.divider()
-        st.markdown("## 🎯 Automated Zendesk Ticket Search Generators (`ticket_id:` Syntax)")
-        st.caption("Copy these pre-formatted queries directly into Zendesk's search bar. Chunking respects word/character limits.")
-
-        z_col1, z_col2 = st.columns(2)
-
-        with z_col1:
-            st.markdown(f"### 1️⃣ Search Strings: No Devices in Okta ({st.session_state.get('t6_no_dev_count', 0)} Tickets)")
-            st.caption("Use in Zendesk search, then bulk solve with note: **'No devices in Okta'**.")
-            no_dev_chunks = st.session_state.get("t6_no_dev_chunks", [])
-            if no_dev_chunks:
-                for idx, chunk in enumerate(no_dev_chunks, start=1):
-                    st.text_area(f"Chunk {idx} ({chunk.count('ticket_id')} tickets):", value=chunk, height=80, key=f"txt_no_dev_{idx}")
-            else:
-                st.info("No tickets identified with zero devices.")
-
-        with z_col2:
-            st.markdown(f"### 2️⃣ Search Strings: Non-MacBook Assets ({st.session_state.get('t6_non_mac_count', 0)} Tickets)")
-            st.caption("Excludes No-Device users. Filter in Zendesk and bulk solve with note: **'Not our assets'**.")
-            non_mac_chunks = st.session_state.get("t6_non_mac_chunks", [])
-            if non_mac_chunks:
-                for idx, chunk in enumerate(non_mac_chunks, start=1):
-                    st.text_area(f"Chunk {idx} ({chunk.count('ticket_id')} tickets):", value=chunk, height=80, key=f"txt_non_mac_{idx}")
-            else:
-                st.info("No non-MacBook device tickets identified.")
-
-        st.divider()
-        st.markdown(f"### 🍎 Apple Business Manager (ABM) MacBook Serials ({st.session_state.get('t6_mac_count', 0)} Serial Numbers)")
-        st.caption("Copy these comma-separated serial numbers and paste them into ABM to verify organization ownership.")
-        st.text_area("ABM Comma-Separated Serials:", value=st.session_state["t6_abm_serials"], height=80, key="txt_abm_serials")
-
-        # --- STEP GAP: ABM RECONCILIATION FILTER ---
-        st.markdown("#### ⚡ ABM Stop-Gap: Resolve Non-ABM MacBooks")
-        st.caption("Paste the serial numbers that were **NOT FOUND** in ABM to generate the exact Zendesk search string to close those tickets.")
-        
-        abm_input_mode = st.radio("ABM Filter Mode:", ["Serials NOT Found in ABM (Close as 'Not in ABM')", "Serials CONFIRMED in ABM (Keep Open for Collection)"], horizontal=True, key="r_abm_mode")
-        pasted_abm_serials = st.text_area("Paste ABM Serial Numbers (Comma or line separated):", height=90, placeholder="H9XW9NC6K4", key="txt_pasted_abm_serials")
-
-        if st.button("🍏 Generate Non-ABM Zendesk Search Query", use_container_width=True, key="btn_gen_abm_query"):
-            if not pasted_abm_serials.strip():
-                st.warning("⚠️ Please paste at least one serial number from your ABM check.")
-            else:
-                raw_serials = [s.strip().upper() for s in re.split(r'[\n,\t]+', pasted_abm_serials) if s.strip()]
-                input_serial_set = set(raw_serials)
-                mac_map = st.session_state.get("t6_macbook_map", [])
-                mode_not_found = abm_input_mode.startswith("Serials NOT Found")
-
-                unique_target_ids, evidence_rows = select_non_abm_tickets(mac_map, input_serial_set, mode_not_found)
-                no_abm_chunks = build_zd_search_chunks(unique_target_ids, max_per_chunk=25)
-                st.session_state["t6_abm_evidence"] = pd.DataFrame(evidence_rows)
-                st.session_state["t6_abm_unknown_serials"] = sorted(input_serial_set - {m["serial"] for m in mac_map})
-
-                st.session_state["t6_non_abm_chunks"] = no_abm_chunks
-                st.session_state["t6_non_abm_count"] = len(unique_target_ids)
-
-        if "t6_non_abm_chunks" in st.session_state:
-            st.success(f"Generated search query for {st.session_state.get('t6_non_abm_count', 0)} non-ABM MacBook ticket(s)!")
-            st.markdown("### 3️⃣ Search Strings: MacBooks NOT in ABM")
-            st.caption("Filter in Zendesk and bulk solve with note: **'Not in ABM'**.")
-            
-            non_abm_chunks = st.session_state.get("t6_non_abm_chunks", [])
-            if non_abm_chunks:
-                for idx, chunk in enumerate(non_abm_chunks, start=1):
-                    st.text_area(f"Non-ABM Chunk {idx} ({chunk.count('ticket_id')} tickets):", value=chunk, height=80, key=f"txt_non_abm_{idx}")
-            else:
-                st.info("No non-ABM tickets found based on input serials.")
-
-        st.divider()
-        audit_tab1, audit_tab2 = st.tabs(["📋 Full Offboarding Audit Log (All Users)", "🚨 Action Items (Hardware Collection Only)"])
-
-        with audit_tab1:
-            st.dataframe(st.session_state["t6_audit_df"], use_container_width=True, hide_index=True)
-            dl_audit_buffer = io.StringIO()
-            st.session_state["t6_audit_df"].to_csv(dl_audit_buffer, index=False)
-            st.download_button(label="📥 Download Full Audit Log CSV", data=dl_audit_buffer.getvalue(), file_name="offboarding_device_audit_full.csv", mime="text/csv", use_container_width=True)
-
-        with audit_tab2:
-            if not st.session_state["t6_matched_devices_df"].empty:
-                st.dataframe(st.session_state["t6_matched_devices_df"], use_container_width=True, hide_index=True)
-                dl_hardware_buffer = io.StringIO()
-                st.session_state["t6_matched_devices_df"].to_csv(dl_hardware_buffer, index=False)
-                st.download_button(label="📥 Download Hardware Collection CSV", data=dl_hardware_buffer.getvalue(), file_name="hardware_collection_list.csv", mime="text/csv", use_container_width=True)
-            else:
-                st.success("🎉 Good news! None of the offboarded users have any enrolled devices in Okta.")
+                st.success("Offboarding device trace complete!")
