@@ -4,6 +4,14 @@
 
 ---
 
+## 🧪 Execution Modes
+
+- **🧪 Demo / Mock Data Mode (Default):** Pre-populates the app with sample Okta directory records so reviewers can test mapping, reconciliation, and offboarding workflows immediately without API keys.
+- **⚡ Live Okta API Connection:** Connects via a Read-Only SSWS token to stream user directory profiles and group rosters directly from an active Okta org.
+- **📁 Upload / Paste CSV File:** Allows manual uploading or pasting of raw exported Okta CSV files.
+
+---
+
 ## 🚀 Key Modules & Architecture
 
 ### 📋 1. Primary Identity Mapper
@@ -47,9 +55,3 @@
   * Categorizes offboarding tickets into **No Enrolled Devices**, **Non-MacBook Assets**, and **MacBook Assets requiring ABM verification**.
   * Automatically builds chunked Zendesk search queries using `type:ticket ticket_id:"<ID>"` syntax (respecting Zendesk's ~64-word search caps).
   * Includes an **ABM Reconciliation Stop-Gap** to reconcile missing serials and output resolution queries for non-ABM tickets.
-
-#### Bulk Extraction Workflow
-1. Select and copy all text from your Zendesk Offboarding view.
-2. Paste into an AI assistant with the prompt:
-   > *"Extract the username and corresponding ticket ID for each offboarding ticket in this text, and output them line-by-line in the format: `username ticket_id`"*
-3. Copy the clean list directly into **The Terminator**.
