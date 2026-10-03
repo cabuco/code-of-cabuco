@@ -36,11 +36,12 @@ I make sure the person who does has the right target.
 
 ## 🧰 Featured Automations & Tools
 
-To eliminate repetitive manual tasks, accelerate cross-platform audits, and streamline IT operations, I build and maintain custom cloud-hosted tools. Each runs inside its own isolated GitHub Codespace container.
+To eliminate repetitive manual tasks, accelerate cross-platform audits, and streamline IT operations, I build and maintain custom cloud-hosted tools. Each runs inside its own isolated GitHub Codespace container and includes a **built-in Demo / Mock Data Mode** for instant live testing without API keys.
 
 ### ⚡ [Entra Vs. Okta Suite (EvO)](./ai-scripts/EvO)
 An enterprise IT automation utility built with Python and Streamlit to audit identity drift, automate deprovisioning workflows, and translate directory objects between Okta and Microsoft Entra ID.
 
+* **🧪 Built-in Demo Mode:** Includes pre-populated mock directory records to test mapping and deprovisioning without API keys.
 * **📋 Primary Identity Mapper:** Bidirectional mapping between platform email handles (`@github.com`) and corporate Microsoft Object IDs (`@microsoft.com`).
 * **🔄 Group Reconciliation Engine:** Audits Okta auto-distribution groups against manual Entra ID groups and outputs bulk `memberObjectIdOrUpn` CSVs for additions and removals in Azure.
 * **🪪 External Identity Resolver:** Converts vendor and guest contractor email addresses into Azure `#EXT#` UPNs and resolves cloud Object IDs.
@@ -55,6 +56,7 @@ An enterprise IT automation utility built with Python and Streamlit to audit ide
 ### 📜 [Rosetta — Slack Export PDF Converter](./ai-scripts/slack/rosetta)
 Decodes official, unstructured Slack export `.zip` archives and converts them into clean, human-readable PDF reports for Legal, HR, and compliance investigations.
 
+* **🧪 Built-in Demo Mode:** Generates a sample Slack export archive (`Sample_Slack_Export_Demo.zip`) in memory for immediate PDF translation testing.
 * **Identity Resolution:** Maps raw Slack user IDs, channel IDs, and DMs to display names.
 * **Streaming Processing:** Handles multi-gigabyte Slack exports without crashing by streaming conversations into split PDF reports.
 * **Privacy-First:** Processes archives entirely inside an isolated Codespace container with zero external data transfer.
