@@ -4,6 +4,40 @@
 
 ---
 
+## ⚡ Quick Start: Launching in GitHub Codespaces
+
+You can run EvO directly in your browser without installing anything locally using GitHub Codespaces.
+
+### Step 1: Open the Codespace
+1. From the root of the repository (`code-of-cabuco`), click the green **`<> Code`** button near the top right.
+2. Select the **`Codespaces`** tab.
+3. Click the **`...`** (three dots) next to the `+` button and select **`New with options...`**
+4. Under **Dev container configuration**, select **`Entra Vs. Okta Suite (EvO)`**.
+5. Click **Create codespace**.
+
+---
+
+### Step 2: What to Expect & Navigating Pop-ups
+
+* **⏳ Loading Time:** The initial build takes **1 to 3 minutes**. GitHub is spinning up a cloud container, updating system dependencies, and installing Python packages (`streamlit`, `pandas`, `requests`).
+* **🛡️ Security / Trust Prompt:** If VS Code in the browser asks *"Do you trust the authors of the files in this folder?"*, click **Yes, I trust the authors**.
+* **🌐 Browser Pop-up Blocker / Auto-Open:** Once the app is healthy, Codespaces will attempt to automatically open the web app on port **8501** in a new browser tab or preview frame. 
+  * If your browser blocks pop-ups, you will see a small banner in the bottom-right corner saying *"Your application running on port 8501 is available."* Click **Open in Browser**.
+
+---
+
+### Step 3: Manual Launch via Ports Tab (If the App Doesn't Open)
+
+If a pop-up blocker prevents auto-opening or if you closed the tab, you can manually open the app at any time:
+
+1. In the bottom pane of the Codespaces VS Code window, click on the **`Ports`** tab (next to *Terminal*).
+2. Locate **Port `8501`** (labeled `Entra Vs. Okta Suite (EvO) Web App`).
+3. Hover over the address in the **Forwarded Address** column and click the **`🌐 Open in Browser`** globe icon (or right-click and select *Open in Browser*).
+
+> **Note:** Streamlit takes ~5–10 seconds to compile its interface on first load. If you see a blank page initially, give it a moment to render.
+
+---
+
 ## 🧪 Execution Modes
 
 - **🧪 Demo / Mock Data Mode (Default):** Pre-populates the app with sample Okta directory records so reviewers can test mapping, reconciliation, and offboarding workflows immediately without API keys.
